@@ -1,0 +1,188 @@
+﻿@page "/students"
+@using BlazorCrud.Data
+@inject StudentService studentService
+<h3>Students</h3>
+<div class="row form-group" hidden="hidden">
+
+    <div class="col-md-2">
+        <label>Student Id</label>
+    </div>
+    <div class="col-md-4">
+        <input class="form-control" @bind="Id" />
+
+    </div>
+</div>
+<div class="row form-group">
+
+    <div class="col-md-2">
+        <label>First Name *</label>
+    </div>
+    <div class="col-md-4">
+        <input class="form-control" @bind="FirstName" />
+
+    </div>
+</div>
+<div class="row form-group">
+    <div class="col-md-2">
+        <label>Last Name *</label>
+    </div>
+    <div class="col-md-4">
+        <input class="form-control" @bind="LastName" />
+    </div>
+</div>
+<div class="row form-group">
+    <div class="col-md-2">
+        <label>Date Of Birth</label>
+    </div>
+    <div class="col-md-4">
+        <input class="form-control" type="date" @bind="DateOfBirth" />
+    </div>
+</div>
+<div class="row form-group">
+    <div class="col-md-2">
+        <label>Gender</label>
+    </div>
+    <div class="col-md-4">
+        <select class="form-control" @bind="Gender">
+            <option selected="selected" value="Male">Male</option>
+            <option value="Female">Female</option>
+        </select>
+    </div>
+</div>
+<div class="row form-group">
+    <div class="col-md-2">
+
+    </div>
+    <div class="col-md-2">
+        <input type="button" class="btn btn-primary" style="width:100%" value="Create" @onclick="createStudent" />
+    </div>
+    <div class="col-md-2">
+        <input type="button" class="btn btn-primary" style="width:100%" value="Update" @onclick="updateStudent" />
+    </div>
+</div>
+
+<div class="row form-group">
+    <div class="col-md-12">
+        <p>@Message</p>
+    </div>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Date Of Birth</th>
+            <th>Gender</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @foreach (var student in students)
+        {
+
+            <tr>
+                <td>@student.Id</td>
+                <td>@student.FirstName</td>
+                <td>@student.LastName</td>
+                <td>@student.DateOfBirth.ToString("dd MMM yyyy")</td>
+                <td>@student.Gender</td>
+                <td>
+                    <button type="button" class="btn btn-link" @onclick="() => loadSelected(student.Id)">
+                        <i class="oi oi-pencil" />
+                    </button>
+                    <button type="button" class="btn btn-link" @onclick="() => deleteStudent(student.Id)">
+                        <i class="oi oi-trash" style="color:red" />
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public DateTime DateOfBirth { get; set; }
+    public string Gender { get; set; }
+    public string Message { get; set; }
+
+
+    List<BlazorCrud.Data.Students> students = new List<BlazorCrud.Data.Students>();
+    public string CreateButtonText { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        students = await studentService.GetAllStudentsAsync();
+    }
+
+    private void loadSelected(int id)
+    {
+        var selected = studentService.GetStudent(id);
+        Id = id;
+        FirstName = selected.FirstName;
+        LastName = selected.LastName;
+        Gender = selected.Gender;
+        DateOfBirth = selected.DateOfBirth;
+        Message = $"Editing {FirstName} {LastName}";
+    }
+
+    private void createStudent()
+    {
+        if (string.IsNullOrEmpty(FirstName) || string.IsNullOrEmpty(LastName))
+        {
+            Message = "Fields marked * are required";
+            return;
+        }
+        var student = new BlazorCrud.Data.Students();
+        student.FirstName = FirstName;
+        student.LastName = LastName;
+        student.DateOfBirth = DateOfBirth;
+        student.Gender = Gender;
+
+        studentService.CreateStudent(student);
+        Message = $"Created {FirstName} {LastName} successfully!";
+        reload();
+    }
+    private void updateStudent()
+    {
+        if (Id == 0)
+        {
+            Message = "Cannot update an empty student";
+            return;
+        }
+        var student = new BlazorCrud.Data.Students();
+        student.Id = Id;
+        student.FirstName = FirstName;
+        student.LastName = LastName;
+        student.DateOfBirth = DateOfBirth;
+        student.Gender = Gender;
+
+        studentService.UpdateStudent(student);
+        Message = $"Updated {FirstName} {LastName} successfully!";
+        reload();
+    }
+
+    private void deleteStudent(int id)
+    {
+        studentService.RemoveStudent(id);
+        Message = $"Deleted student {id} successfully!";
+        reload();
+    }
+
+    private void reload()
+    {
+        Id = 0;
+        FirstName = string.Empty;
+        LastName = string.Empty;
+        DateOfBirth = DateTime.Now;
+        Gender = "male";
+        students =studentService.ReloadAllStudents();
+    }
+
+    
+
+}
